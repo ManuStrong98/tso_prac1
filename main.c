@@ -1,4 +1,5 @@
-#include "leerFile.h"
+#include "funciones/leerFile.c"
+/* #include "funciones/sumarCol.c" */
 int main(int argc, char* argv[]) {
     if (argc != 2) {
         printf("Uso: %s <nombre del archivo>\n", argv[0]);
