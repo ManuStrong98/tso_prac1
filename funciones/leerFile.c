@@ -40,7 +40,14 @@ void contarFilasColumnas(const char* nombreArchivo, int* filas, int* columnas) {
 }
 
 // Función para leer la matriz desde el archivo
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <ctype.h>
+
 int** leerMatriz(const char* nombreArchivo, int filas, int columnas) {
+    // Abrir el archivo
     int fd = open(nombreArchivo, O_RDONLY);
     if (fd == -1) {
         perror("Error al abrir el archivo");
@@ -49,32 +56,68 @@ int** leerMatriz(const char* nombreArchivo, int filas, int columnas) {
 
     // Asignar memoria para la matriz
     int** matriz = (int**)malloc(filas * sizeof(int*));
-    for (int i = 0; i < filas; i++) {
+    if (matriz == NULL) {
+        perror("Error al asignar memoria para la matriz");
+        close(fd);
+        exit(1);
+    }
+
+    int i;
+    for (i = 0; i < filas; i++) {
         matriz[i] = (int*)malloc(columnas * sizeof(int));
+        if (matriz[i] == NULL) {
+            perror("Error al asignar memoria para una fila de la matriz");
+            // Liberar la memoria asignada previamente
+            while (i > 0) {
+                free(matriz[i-1]);
+                i--;
+            }
+            free(matriz);
+            close(fd);
+            exit(1);
+        }
     }
 
     // Leer la matriz desde el archivo
     char buffer[10];
     ssize_t bytesLeidos;
-    int i = 0, j = 0, numBytes;
+    int iFila = 0, iCol = 0, numBytes = 0;
     
     while ((bytesLeidos = read(fd, buffer, sizeof(buffer)-1)) > 0) {
-        for (int k = 0; k < bytesLeidos; k++) {
+        int k;
+        for (k = 0; k < bytesLeidos; k++) {
             if (isdigit(buffer[k])) {
                 numBytes = 0;
-                while (isdigit(buffer[k])) {
+                while (k < bytesLeidos && isdigit(buffer[k])) {
                     numBytes = numBytes * 10 + (buffer[k] - '0');
                     k++;
                 }
-                matriz[i][j] = numBytes;
-                j++;
+                matriz[iFila][iCol] = numBytes;
+                iCol++;
+                if (iCol == columnas) {
+                    iCol = 0;
+                    iFila++;
+                }
             } else if (buffer[k] == '\n') {
-                i++;
-                j = 0;
+                // Si se encuentra un salto de línea, resetear la columna
+                iCol = 0;
+                iFila++;
             }
         }
     }
 
+    // Verificar que se hayan leído todas las filas y columnas
+    if (iFila != filas) {
+        fprintf(stderr, "Error: El archivo no contiene el número esperado de filas.\n");
+        for (i = 0; i < filas; i++) {
+            free(matriz[i]);
+        }
+        free(matriz);
+        close(fd);
+        exit(1);
+    }
+
+    // Cerrar el archivo
     close(fd);
     return matriz;
 }
