@@ -3,13 +3,14 @@
 #include "include/leerFile.h"
 #include "funciones/estructuraDeDato/listaEnlazadasDeListaInt.c"
 #include "include/listaEnlazadasDeListaInt.h"
+#include "include/sumarCol.h"
 #include <stdio.h>
 #include<stdbool.h>// Booleanos
 #include <stdlib.h>
 
-void volverTodaLaFilaEn0(int* c, int col){
+void volverTodaLaFilaEn0(int** c, int index, int col){
     for(int i = 0; i < col; i++){
-	c[i] = 0;
+	c[index][i] = 0;
     }
 }
 bool hayAlgunNegativoEnlaLista(int* a, int* r, int col){
@@ -62,78 +63,81 @@ int main(int argc, char* argv[]) {
 
     int** matriz = matrizFile(argv[1]);
     contarFilasColumnas(argv[1], &filas, &columnas);
-    printf("fila: %d, col: %d\n", filas, columnas);
+    /* printf("fila: %d, col: %d\n", filas, columnas); */
+    printf("archivo C: \n");
     imprimirMatriz(matriz, filas, columnas);
+    printf("\n");
 
     int c[columnas];
     sumarColumnas1(matriz, filas,columnas, c); 
-    for (int i = 0; i < columnas; i++) {
-	printf("%d: %d ", i, c[i]);
-    }
-    printf("\n");
+    /* for (int i = 0; i < columnas; i++) { */
+	/* printf("%d: %d ", i, c[i]); */
+    /* } */
+    /* printf("\n"); */
 
     int** e = matrizFile(argv[2]);
+    printf("archivo E: \n");
+    imprimirMatriz(e, 1, columnas);
+    printf("\n");
     int a[columnas];
     for (int i = 0; i < columnas; i++) {
 	a[i] = e[0][i] - c[i];
     }
-    for (int i = 0; i < columnas; i++) {
-	printf("%d ", a[i]);
-    }
-    printf("\n");
+    /* for (int i = 0; i < columnas; i++) { */
+	/* printf("%d ", a[i]); */
+    /* } */
+    /* printf("\n"); */
 
     int** r = matrizFile(argv[3]);
     int filR= 0;
     int colR = 0;
     contarFilasColumnas(argv[3], &filR, &colR);
-    for(int i = 0; i < filR; i++){
-	for(int j = 0; j < colR; j++){
-	    printf("%d ", r[i][j]);
-	}
-	printf("\n");
-    }
+    printf("archivo R: \n");
+    imprimirMatriz(r, filR, colR);
+   /* for(int i = 0; i < filR; i++){ */
+	/* for(int j = 0; j < colR; j++){ */
+	    /* printf("%d ", r[i][j]); */
+	/* } */
+	/* printf("\n"); */
+    /* } */
 
     ListaCiclicaDeListas *lista = crearListaCiclica();
     for(int i = 0; i < filR; i++){
 	agregarNodo(lista, r[i], colR, i);
     }
 
-    printf("\n");
-    printf("Tamaño de la lista: %d\n", obtenerTamano(lista));
-    imprimirLista(lista);
+    /* printf("\n"); */
+    /* printf("Tamaño de la lista: %d\n", obtenerTamano(lista)); */
+    /* imprimirLista(lista); */
 
     Nodo *temp = lista->cabeza;
     int indice = 0;
+    char* mensajeInterB = "hay interbloqueo";
+    int k = 0;
 
     while(obtenerTamano(lista) > 0){
 	if(!hayAlgunNegativoEnlaLista(a, temp->datos, colR)){
+	    volverTodaLaFilaEn0(matriz, temp->indice, colR);
+	    sumarColumnas1(matriz, filas,  columnas, c);
+
 	    eliminarNodo(lista,indice);
 
 	}
 	temp = temp->siguiente;
-	/* if(indice == obtenerTamano(lista) - 1){ */
-	/*     printf("interbloqueo\n"); */
-	/*     exit(0); */
-	/* } */
-	indice = indice % obtenerTamano(lista);
-	printf("el indice es: %d\n", indice);
+	indice = (k) % obtenerTamano(lista);
+	if(obtenerTamano(lista) == 1){
+	    temp = lista->cabeza;
+	    indice = 0;
+	}
+	k++;
+	if(obtenerTamano(lista) <= 1){
+	    mensajeInterB = "no hay interbloqueo";
+	    break;
+	}
     }
+    printf("%s", mensajeInterB);
 
 
-
-
-    if(verificarInterbloqueo(r, a, filR, colR)){
-	printf("interbloqueo");
-    }else{
-	printf("no hay interbloqueo");
-    }
-
-    int i = 0;
-    while (filR > i ) {
-	i += 1;
-    }
-
-    // Liberar memoria
     for (int i = 0; i < filas; i++) {
 	free(matriz[i]);
     }
